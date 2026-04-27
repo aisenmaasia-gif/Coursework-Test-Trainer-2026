@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Trainer.BusinessLogic/Trainer.BusinessLogic.csproj" />
+    <Project Path="src/Trainer.DataAccess/Trainer.DataAccess.csproj" />
+    <Project Path="src/Trainer.Domain/Trainer.Domain.csproj" />
+    <Project Path="src/Trainer.UI/Trainer.UI.csproj" />
+  </Folder>
+</Solution>
