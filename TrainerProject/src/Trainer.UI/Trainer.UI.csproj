@@ -1,5 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <ItemGroup>
+    <ProjectReference Include="..\Trainer.BusinessLogic\Trainer.BusinessLogic.csproj" />
+    <ProjectReference Include="..\Trainer.DataAccess\Trainer.DataAccess.csproj" />
+    <ProjectReference Include="..\Trainer.Domain\Trainer.Domain.csproj" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
