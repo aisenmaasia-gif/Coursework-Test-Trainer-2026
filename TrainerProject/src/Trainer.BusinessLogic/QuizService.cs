@@ -1,0 +1,57 @@
+using Trainer.Domain;
+using Trainer.DataAccess;
+
+namespace Trainer.BusinessLogic;
+
+public class QuizService
+{
+    private readonly DataContext _context;
+    private readonly Random _random = new();
+
+    public QuizService(DataContext context)
+    {
+        _context = context;
+    }
+    public List<Question> GenerateSession(string topicName, int questionCount, bool shuffle = true)
+    {
+        var topic = _context.Topics.GetAll().FirstOrDefault(t => t.Name == topicName);
+        
+        if (topic == null || !topic.Questions.Any())
+            throw new Exception("Тема не знайдена або вона порожня.");
+
+        var questions = topic.Questions.AsEnumerable();
+
+        if (shuffle)
+        {
+            questions = questions.OrderBy(q => _random.Next());
+        }
+
+        return questions.Take(questionCount).ToList();
+    }
+
+    public double CalculateResult(List<(Question Question, object UserAnswer)> sessionAnswers)
+    {
+        double totalPoints = 0;
+        foreach (var item in sessionAnswers)
+        {
+            if (item.Question.CheckAnswer(item.UserAnswer))
+            {
+                totalPoints += item.Question.Points;
+            }
+        }
+        return totalPoints;
+    }
+
+    public void SaveResult(string studentName, string topicName, double score)
+    {
+        var results = _context.History.GetAll().ToList();
+        results.Add(new TestResult 
+        { 
+            StudentName = studentName, 
+            TopicName = topicName, 
+            Score = score, 
+            DateTime = DateTime.Now 
+        });
+        _context.History.SaveAll(results);
+    }
+}

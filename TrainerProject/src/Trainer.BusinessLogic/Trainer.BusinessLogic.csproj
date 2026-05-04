@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Trainer.Domain\Trainer.Domain.csproj" />
+    <ProjectReference Include="..\Trainer.DataAccess\Trainer.DataAccess.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
