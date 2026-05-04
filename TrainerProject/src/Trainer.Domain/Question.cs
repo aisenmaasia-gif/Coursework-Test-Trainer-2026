@@ -10,6 +10,6 @@ public abstract class Question
     public string Text { get; set; } = string.Empty;
     public Difficulty Level { get; set; }
     public double Points { get; set; }
-
+    public abstract void Shuffle(); 
     public abstract bool CheckAnswer(object answer);
 }
