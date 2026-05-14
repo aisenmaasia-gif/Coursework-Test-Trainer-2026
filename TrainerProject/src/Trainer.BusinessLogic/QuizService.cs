@@ -20,7 +20,7 @@ public class QuizService
     public List<Question> GenerateSession(string topicName, int questionCount, bool shuffle = true)
     {
         var topic = _context.Topics.GetAll().FirstOrDefault(t => t.Name == topicName);
-        
+
         if (topic == null || !topic.Questions.Any())
             throw new Exception("Тема не знайдена або вона порожня.");
 
@@ -52,17 +52,36 @@ public class QuizService
 
     public void SaveResult(string studentName, string topicName, double score)
     {
-        var newResult = new TestResult 
-        { 
-            StudentName = studentName, 
-            TopicName = topicName, 
-            Score = score, 
-            DateTime = DateTime.Now 
+        var newResult = new TestResult
+        {
+            StudentName = studentName,
+            TopicName = topicName,
+            Score = score,
+            DateTime = DateTime.Now
         };
 
         var results = _context.History.GetAll().ToList();
         results.Add(newResult);
         _context.History.SaveAll(results);
         OnQuizCompleted?.Invoke(newResult);
+    }
+    public List<Question> GenerateManualSession(string topicName, List<int> selectedIndices)
+    {
+        var topic = _context.Topics.GetAll()
+            .FirstOrDefault(t => t.Name.Equals(topicName, StringComparison.OrdinalIgnoreCase));
+
+        if (topic == null) throw new Exception("Тему не знайдено.");
+
+        List<Question> customList = new List<Question>();
+
+        foreach (int index in selectedIndices)
+        {
+            if (index >= 0 && index < topic.Questions.Count)
+            {
+                customList.Add(topic.Questions[index]);
+            }
+        }
+
+        return customList;
     }
 }

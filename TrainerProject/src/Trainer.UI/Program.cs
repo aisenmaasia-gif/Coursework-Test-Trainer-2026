@@ -43,6 +43,25 @@ while (true)
 }
 
 void ShowHelp()
+
 {
-    Console.WriteLine("\nКоманди: list, start <Topic>, history, stats, create-topic, add-question <Topic>, delete-topic <Topic>, settings, exit");
+    Console.WriteLine("\nДоступні команди:");
+    Console.WriteLine("  list                  - Показати всі теми");
+    Console.WriteLine("  start <Topic>         - Пройти тест (випадковий або ручний вибір)");
+    Console.WriteLine("  history               - Історія результатів");
+    Console.WriteLine("  stats                 - Статистика успішності");
+
+    Console.WriteLine("\nАдміністрування тем:");
+    Console.WriteLine("  create-topic          - Створити нову тему");
+    Console.WriteLine("  edit-topic <Topic>    - Змінити назву теми");
+    Console.WriteLine("  delete-topic <Topic>  - Видалити тему");
+
+    Console.WriteLine("\nАдміністрування питань:");
+    Console.WriteLine("  add-question <Topic>  - Додати нове питання");
+    Console.WriteLine("  edit-question <Topic> - Редагувати питання");
+    Console.WriteLine("  delete-question <Topic>- Видалити питання");
+
+    Console.WriteLine("\nІнше:");
+    Console.WriteLine("  settings              - Налаштування застосунку");
+    Console.WriteLine("  exit                  - Вихід");
 }

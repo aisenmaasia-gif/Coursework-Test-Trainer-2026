@@ -16,83 +16,123 @@ public class QuizHandler
 
     public void StartQuiz(string[] args)
     {
-        if (args.Length < 2) { UIHelpers.PrintColored("Використання: start <НазваТеми>", ConsoleColor.Red); return; }
+        if (args.Length < 2)
+        {
+            UIHelpers.PrintColored("Використання: start <НазваТеми>", ConsoleColor.Red);
+            return;
+        }
+
         string topicName = string.Join(" ", args.Skip(1));
+        var topic = _topicService.GetTopics().FirstOrDefault(t => t.Name.Equals(topicName, StringComparison.OrdinalIgnoreCase));
 
-        Console.Write("Кількість питань (за замовчуванням 5): ");
-        int.TryParse(Console.ReadLine(), out int count);
-        if (count <= 0) count = 5;
+        if (topic == null)
+        {
+            UIHelpers.PrintColored($"Тему '{topicName}' не знайдено.", ConsoleColor.Red);
+            return;
+        }
 
-        var questions = _quizService.GenerateSession(topicName, count);
+        UIHelpers.PrintColored($"\n--- Тема: {topic.Name} ({topic.Questions.Count} питань) ---", ConsoleColor.Cyan);
+        Console.WriteLine("1. Випадкові питання (вказати кількість)");
+        Console.WriteLine("2. Вибрати питання вручну (вказати номери)");
+
+        string mode = UIHelpers.Prompt("Оберіть режим");
+        List<Question> sessionQuestions = new List<Question>();
+
+        if (mode == "2")
+        {
+            for (int i = 0; i < topic.Questions.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. {topic.Questions[i].Text}");
+            }
+
+            string input = UIHelpers.Prompt("Введіть номери питань через кому (напр. 1, 3, 5)");
+            List<int> chosenIndices = new List<int>();
+            string[] parts = input.Split(',');
+
+            foreach (string p in parts)
+            {
+                if (int.TryParse(p.Trim(), out int idx))
+                {
+                    chosenIndices.Add(idx - 1);
+                }
+            }
+            sessionQuestions = _quizService.GenerateManualSession(topicName, chosenIndices);
+        }
+        else
+        {
+            Console.Write("Скільки питань підготувати? ");
+            if (int.TryParse(Console.ReadLine(), out int count))
+            {
+                sessionQuestions = _quizService.GenerateSession(topicName, count);
+            }
+        }
+
+        if (sessionQuestions.Count > 0)
+        {
+            ExecuteQuiz(sessionQuestions, topic.Name);
+        }
+        else
+        {
+            UIHelpers.PrintColored("Питання не обрані.", ConsoleColor.Yellow);
+        }
+    }
+
+    private void ExecuteQuiz(List<Question> questions, string topicName)
+    {
         var sessionResults = new List<(Question Q, object UserAns)>();
 
         foreach (var q in questions)
         {
             Console.Clear();
-            UIHelpers.PrintColored($"--- {q.Text} ---", ConsoleColor.Yellow);
+            UIHelpers.PrintColored($"Питання: {q.Text}", ConsoleColor.Yellow);
 
             if (q is SingleChoiceQuestion scq)
             {
                 for (int i = 0; i < scq.Options.Count; i++) Console.WriteLine($"{i + 1}. {scq.Options[i]}");
-                int.TryParse(UIHelpers.Prompt("Ваша відповідь (номер)"), out int ans);
+                int.TryParse(UIHelpers.Prompt("Ваш вибір (номер)"), out int ans);
                 sessionResults.Add((q, ans > 0 && ans <= scq.Options.Count ? scq.Options[ans - 1] : ""));
             }
             else if (q is MultipleChoiceQuestion mcq)
-{
-    for (int i = 0; i < mcq.Options.Count; i++)
-    {
-        Console.WriteLine($"{i + 1}. {mcq.Options[i]}");
-    }
-
-    string input = UIHelpers.Prompt("Ваші відповіді (номери через кому, напр. 1, 3)");
-
-    List<string> selectedVariants = new List<string>();
-
-    string[] parts = input.Split(',');
-
-    foreach (string part in parts)
-    {
-        string cleanPart = part.Trim();
-
-        if (string.IsNullOrEmpty(cleanPart))
-        {
-            continue;
-        }
-
-        if (int.TryParse(cleanPart, out int index))
-        {
-            if (index > 0 && index <= mcq.Options.Count)
             {
-                selectedVariants.Add(mcq.Options[index - 1]);
-            }
-        }
-    }
+                for (int i = 0; i < mcq.Options.Count; i++) Console.WriteLine($"{i + 1}. {mcq.Options[i]}");
+                string input = UIHelpers.Prompt("Ваші відповіді (номери через кому)");
 
-    sessionResults.Add((q, selectedVariants));
-}
+                List<string> selected = new List<string>();
+                string[] parts = input.Split(',');
+                foreach (var p in parts)
+                {
+                    if (int.TryParse(p.Trim(), out int idx) && idx > 0 && idx <= mcq.Options.Count)
+                        selected.Add(mcq.Options[idx - 1]);
+                }
+                sessionResults.Add((q, selected));
+            }
+            else if (q is OpenEndedQuestion)
+            {
+                sessionResults.Add((q, UIHelpers.Prompt("Ваша відповідь")));
+            }
         }
 
         double score = _quizService.CalculateResult(sessionResults);
-        _quizService.SaveResult("Користувач", topicName, score);
-        UIHelpers.PrintColored($"\nВаш результат: {score} балів.", ConsoleColor.Green);
+        _quizService.SaveResult("User", topicName, score);
+        UIHelpers.PrintColored($"\nТест завершено! Ваш бал: {score}", ConsoleColor.Green);
 
         ShowErrorReview(sessionResults);
+        UIHelpers.Wait();
     }
 
     private void ShowErrorReview(List<(Question Q, object UserAns)> results)
     {
-        Console.Write("\nБажаєте переглянути помилки? (y/n): ");
+        Console.Write("\nПереглянути помилки? (y/n): ");
         if (Console.ReadLine()?.ToLower() != "y") return;
 
-        Console.WriteLine("\n--- Аналіз помилок ---");
         foreach (var item in results)
         {
             if (!item.Q.CheckAnswer(item.UserAns))
             {
                 UIHelpers.PrintColored($"[X] {item.Q.Text}", ConsoleColor.Red);
-                Console.WriteLine($"Ваша відповідь: {(item.UserAns is List<string> l ? string.Join(", ", l) : item.UserAns)}");
+                string userResponse = item.UserAns is List<string> list ? string.Join(", ", list) : item.UserAns.ToString();
+                Console.WriteLine($"Ваша відповідь: {userResponse}");
             }
         }
-        UIHelpers.Wait();
     }
 }
