@@ -18,8 +18,10 @@ while (true)
     if (input == null || input.Length == 0) continue;
     string cmd = input[0].ToLower();
 
-    try {
-        switch (cmd) {
+    try
+    {
+        switch (cmd)
+        {
             case "help": ShowHelp(); break;
             case "exit": return;
             case "list": adminHandler.ListTopics(); break;
@@ -30,11 +32,17 @@ while (true)
             case "add-question": adminHandler.AddQuestion(input); break;
             case "delete-topic": adminHandler.DeleteTopic(input); break;
             case "settings": settingsHandler.ShowSettings(); break;
+            case "edit-topic": adminHandler.EditTopicName(input); break;
+            case "edit-question": adminHandler.EditQuestion(input); break;
+            case "delete-question": adminHandler.DeleteQuestion(input); break;
+            case "edit-topic-name": adminHandler.EditTopic(input); break;
             default: Console.WriteLine("Невідома команда."); break;
         }
-    } catch (Exception ex) { UIHelpers.PrintColored($"Помилка: {ex.Message}", ConsoleColor.Red); }
+    }
+    catch (Exception ex) { UIHelpers.PrintColored($"Помилка: {ex.Message}", ConsoleColor.Red); }
 }
 
-void ShowHelp() {
+void ShowHelp()
+{
     Console.WriteLine("\nКоманди: list, start <Topic>, history, stats, create-topic, add-question <Topic>, delete-topic <Topic>, settings, exit");
 }
