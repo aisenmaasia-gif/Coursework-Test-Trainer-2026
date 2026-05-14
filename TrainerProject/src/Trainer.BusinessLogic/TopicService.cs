@@ -33,4 +33,20 @@ public class TopicService
     }
 
     public List<Topic> GetTopics() => _context.Topics.GetAll().ToList();
+
+    public void DeleteTopic(string name)
+{
+    var topics = _context.Topics.GetAll().ToList();
+
+    var topicToRemove = topics.FirstOrDefault(t => t.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+    
+    if (topicToRemove == null)
+    {
+        throw new Exception($"Тему з назвою '{name}' не знайдено.");
+    }
+
+    topics.Remove(topicToRemove);
+
+    _context.Topics.SaveAll(topics);
+}
 }

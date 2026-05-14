@@ -3,6 +3,7 @@ namespace Trainer.Domain;
 public class SingleChoiceQuestion : Question
 {
     public List<string> Options { get; set; } = new();
+     public string CorrectAnswer { get; set; } = string.Empty;
     public int CorrectOptionIndex { get; set; }
 
      public override void Shuffle()

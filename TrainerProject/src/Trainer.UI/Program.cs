@@ -3,161 +3,247 @@ using Trainer.BusinessLogic;
 using Trainer.Domain;
 
 var context = new DataContext();
-var quizService = new QuizService(context);
 var topicService = new TopicService(context);
+var quizService = new QuizService(context);
 var statsService = new StatisticsService(context);
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
-Console.Title = "Тренажер для підготовки до тестів v1.0";
-
-Console.ForegroundColor = ConsoleColor.Cyan;
-Console.WriteLine("=== Вітаємо у тренажері для підготовки до іспитів ===");
-Console.ResetColor();
-
-Console.Write("Введіть ваше ім'я: ");
-string userName = Console.ReadLine() ?? "Гість";
+Console.Clear();
+Console.WriteLine("=== Trainer CLI 2026 | Введіть 'help' для списку команд ===");
 
 while (true)
 {
-    Console.Clear();
-    Console.WriteLine($"Користувач: {userName}");
-    Console.WriteLine("--------------------------------");
-    Console.WriteLine("1. Почати тренування");
-    Console.WriteLine("2. Керування темами (Admin)");
-    Console.WriteLine("3. Переглянути статистику");
-    Console.WriteLine("4. Вихід");
-    Console.Write("\nОберіть дію: ");
+    Console.ForegroundColor = ConsoleColor.Gray;
+    Console.Write("\n> ");
+    string input = Console.ReadLine()?.Trim() ?? "";
+    Console.ResetColor();
 
-    string choice = Console.ReadLine() ?? "";
+    if (string.IsNullOrEmpty(input)) continue;
+
+    string[] parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    string command = parts[0].ToLower();
 
     try
     {
-        switch (choice)
+        switch (command)
         {
-            case "1": StartTraining(userName, quizService, topicService); break;
-            case "2": AdminMenu(topicService); break;
-            case "3": ShowStatistics(statsService); break;
-            case "4": return;
-            default: Console.WriteLine("Невірний вибір. Натисніть будь-яку клавішу..."); Console.ReadKey(); break;
+            case "help": ShowHelp(); break;
+            case "exit": return;
+
+            case "list": ShowTopicsList(topicService); break;
+            case "start": StartQuiz(parts, quizService, topicService); break;
+            case "history": ShowHistory(context); break;
+            case "stats": ShowFullStats(statsService); break;
+
+            case "create-topic": CreateTopic(topicService); break;
+            case "add-question": AddQuestion(parts, topicService); break;
+            case "delete-topic": DeleteTopic(parts, topicService); break;
+
+            default:
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Невідома команда: '{command}'. Введіть 'help' для довідки.");
+                Console.ResetColor();
+                break;
         }
     }
     catch (Exception ex)
     {
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine($"\nПомилка: {ex.Message}");
+        Console.WriteLine($"Помилка: {ex.Message}");
         Console.ResetColor();
-        Console.ReadKey();
     }
 }
 
-void StartTraining(string userName, QuizService quiz, TopicService topics)
+void ShowHelp()
 {
-    var allTopics = topics.GetTopics();
-    if (!allTopics.Any()) 
-    {
-        Console.WriteLine("Список тем порожній. Спочатку додайте тему в Admin-меню.");
-        Console.ReadKey();
-        return;
-    }
+    Console.WriteLine("\nДоступні команди:");
+    Console.WriteLine("  list                  - Показати всі теми");
+    Console.WriteLine("  start <TopicName>     - Почати тест за назвою теми");
+    Console.WriteLine("  history               - Історія проходжень");
+    Console.WriteLine("  stats                 - Статистика успішності");
+    Console.WriteLine("\nАдміністрування:");
+    Console.WriteLine("  create-topic          - Створити нову тему");
+    Console.WriteLine("  add-question <Topic>  - Додати питання до теми");
+    Console.WriteLine("  delete-topic <Topic>  - Видалити тему");
+    Console.WriteLine("  exit / help           - Вихід / Довідка");
+}
 
-    Console.WriteLine("\nОберіть тему (введіть номер):");
-    for (int i = 0; i < allTopics.Count; i++)
-        Console.WriteLine($"{i + 1}. {allTopics[i].Name}");
+void ShowTopicsList(TopicService service)
+{
+    var topics = service.GetTopics();
+    if (!topics.Any()) { Console.WriteLine("Теми відсутні."); return; }
+    
+    Console.WriteLine("\nДоступні теми:");
+    foreach (var t in topics) 
+        Console.WriteLine($"- {t.Name} ({t.Questions.Count} питань)");
+}
 
-    if (!int.TryParse(Console.ReadLine(), out int topicIndex) || topicIndex < 1 || topicIndex > allTopics.Count)
-    {
-        Console.WriteLine("Невірний вибір.");
-        Console.ReadKey();
-        return;
-    }
+void StartQuiz(string[] args, QuizService quiz, TopicService topics)
+{
+    if (args.Length < 2) { Console.WriteLine("Використання: start <НазваТеми>"); return; }
+    string topicName = string.Join(" ", args.Skip(1));
 
-    var selectedTopic = allTopics[topicIndex - 1];
-
-    Console.Write("Скільки питань підготувати? ");
+    Console.Write("Кількість питань: ");
     int.TryParse(Console.ReadLine(), out int count);
+    if (count <= 0) count = 5;
 
-    var sessionQuestions = quiz.GenerateSession(selectedTopic.Name, count);
-    var sessionAnswers = new List<(Question, object)>();
+    var questions = quiz.GenerateSession(topicName, count);
+    var answers = new List<(Question, object)>();
 
-    foreach (var q in sessionQuestions)
+    foreach (var q in questions)
     {
-        Console.Clear();
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine($"Питання: {q.Text}");
-        Console.ResetColor();
+        Console.WriteLine($"\n--- {q.Text} ---");
 
         if (q is SingleChoiceQuestion scq)
         {
-            for (int i = 0; i < scq.Options.Count; i++)
-                Console.WriteLine($"{i + 1}. {scq.Options[i]}");
+            for (int i = 0; i < scq.Options.Count; i++) Console.WriteLine($"{i + 1}. {scq.Options[i]}");
+            Console.Write("Ваш вибір (номер): ");
+            if (int.TryParse(Console.ReadLine(), out int choice) && choice > 0 && choice <= scq.Options.Count)
+                answers.Add((q, scq.Options[choice - 1]));
+        }
+        else if (q is MultipleChoiceQuestion mcq)
+        {
+            for (int i = 0; i < mcq.Options.Count; i++) Console.WriteLine($"{i + 1}. {mcq.Options[i]}");
+            Console.Write("Ваші відповіді (номери через кому, напр. 1,4): ");
             
-            Console.Write("\nВаша відповідь (номер): ");
-            if (int.TryParse(Console.ReadLine(), out int ansIdx) && ansIdx > 0 && ansIdx <= scq.Options.Count)
-                sessionAnswers.Add((q, scq.Options[ansIdx - 1]));
+            string input = Console.ReadLine() ?? "";
+            var selectedStrings = input.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => int.TryParse(s, out int idx) ? idx : -1)
+                .Where(idx => idx > 0 && idx <= mcq.Options.Count)
+                .Select(idx => mcq.Options[idx - 1])
+                .ToList();
+
+            answers.Add((q, selectedStrings));
         }
         else if (q is OpenEndedQuestion)
         {
-            Console.Write("Введіть вашу відповідь: ");
-            sessionAnswers.Add((q, Console.ReadLine() ?? ""));
+            Console.Write("Ваша відповідь: ");
+            string userResponse = Console.ReadLine()?.Trim() ?? "";
+            answers.Add((q, userResponse));
         }
     }
 
-    double score = quiz.CalculateResult(sessionAnswers);
-    quiz.SaveResult(userName, selectedTopic.Name, score);
+    double res = quiz.CalculateResult(answers);
+    quiz.SaveResult("User", topicName, res);
+    
+    Console.ForegroundColor = ConsoleColor.Green;
+    Console.WriteLine($"\nВаш результат: {res} балів.");
+    Console.ResetColor();
+}
+
+void ShowHistory(DataContext context)
+{
+    var history = context.History.GetAll();
+    if (!history.Any()) { Console.WriteLine("Історія порожня."); return; }
+    
+    Console.WriteLine("\n=== Історія проходжень ===");
+    foreach (var h in history) 
+        Console.WriteLine($"{h.DateTime:G} | {h.TopicName} | {h.Score}б.");
+}
+
+void ShowFullStats(StatisticsService stats)
+{
+    var avg = stats.GetAverageScoresByTopic();
+    if (!avg.Any()) { Console.WriteLine("Статистика порожня."); return; }
+    
+    Console.WriteLine("\n=== Статистика успішності за темами ===");
+    foreach (var item in avg)
+        Console.WriteLine($"{item.Key,-20} : {item.Value,6:F2} сер. бал");
+}
+
+void CreateTopic(TopicService service)
+{
+    Console.Write("Введіть назву нової теми: ");
+    string name = Console.ReadLine() ?? "";
+    service.AddTopic(name);
+    Console.WriteLine($"Тема '{name}' створена.");
+}
+
+void AddQuestion(string[] args, TopicService service)
+{
+    if (args.Length < 2) { Console.WriteLine("Використання: add-question <НазваТеми>"); return; }
+    string topicName = string.Join(" ", args.Skip(1)); 
+
+    Console.WriteLine("\nОберіть тип запитання:");
+    Console.WriteLine(" 1 - Один варіант (Single Choice)");
+    Console.WriteLine(" 2 - Мультивідповідь (Multiple Choice)");
+    Console.WriteLine(" 3 - Відкрите питання (Open Ended)");
+    Console.Write("> ");
+    string type = Console.ReadLine() ?? "1";
+
+    Console.Write("Текст запитання: ");
+    string text = Console.ReadLine() ?? "";
+    Console.Write("Кількість балів за правильну відповідь: ");
+    double.TryParse(Console.ReadLine(), out double points);
+    if (points <= 0) points = 10;
+
+    if (type == "1") 
+    {
+        Console.Write("Варіанти (через кому, напр. 2, 4, 6): ");
+        var opts = Console.ReadLine()?.Split(',').Select(s => s.Trim()).ToList() ?? new();
+        
+        Console.Write("Правильна відповідь (текст): ");
+        string correct = Console.ReadLine() ?? "";
+        
+        service.AddQuestionToTopic(topicName, new SingleChoiceQuestion 
+        { 
+            Text = text, Options = opts, CorrectAnswer = correct, Points = points 
+        });
+    }
+    else if (type == "2")
+    {
+        Console.Write("Варіанти (через кому): ");
+        var opts = Console.ReadLine()?.Split(',').Select(s => s.Trim()).ToList() ?? new();
+        
+        Console.Write("УСІ правильні відповіді (через кому): ");
+        var corrects = Console.ReadLine()?.Split(',').Select(s => s.Trim()).ToList() ?? new();
+        
+        service.AddQuestionToTopic(topicName, new MultipleChoiceQuestion 
+        { 
+            Text = text, Options = opts, CorrectAnswers = corrects, Points = points 
+        });
+    }
+    else 
+    {
+        Console.Write("Правильна відповідь (текст): ");
+        string correct = Console.ReadLine() ?? "";
+        
+        service.AddQuestionToTopic(topicName, new OpenEndedQuestion 
+        { 
+            Text = text, CorrectAnswer = correct, Points = points 
+        });
+    }
 
     Console.ForegroundColor = ConsoleColor.Green;
-    Console.WriteLine($"\nТест завершено! Ви набрали: {score} балів.");
+    Console.WriteLine("Питання успішно додано!");
     Console.ResetColor();
-    Console.WriteLine("Натисніть будь-яку клавішу...");
-    Console.ReadKey();
 }
 
-void AdminMenu(TopicService topics)
+void DeleteTopic(string[] args, TopicService service)
 {
-    Console.Clear();
-    Console.WriteLine("=== Адміністрування ===");
-    Console.WriteLine("1. Створити нову тему");
-    Console.WriteLine("2. Додати питання до теми");
-    Console.WriteLine("3. Назад");
-    
-    string subChoice = Console.ReadLine() ?? "";
-    if (subChoice == "1")
-    {
-        Console.Write("Введіть назву теми: ");
-        topics.AddTopic(Console.ReadLine() ?? "Без назви");
-        Console.WriteLine("Тему створено.");
+    if (args.Length < 2) 
+    { 
+        Console.WriteLine("Помилка! Використання: delete-topic <НазваТеми>"); 
+        return; 
     }
-    else if (subChoice == "2")
+
+    string topicName = string.Join(" ", args.Skip(1));
+
+    Console.ForegroundColor = ConsoleColor.Yellow;
+    Console.Write($"Ви впевнені, що хочете видалити тему '{topicName}' та ВСІ питання в ній? (y/n): ");
+    Console.ResetColor();
+
+    string confirm = Console.ReadLine()?.ToLower() ?? "";
+
+    if (confirm == "y" || confirm == "н") 
     {
-        var all = topics.GetTopics();
-        for (int i = 0; i < all.Count; i++) Console.WriteLine($"{i+1}. {all[i].Name}");
-        
-        Console.Write("Оберіть номер теми: ");
-        int idx = int.Parse(Console.ReadLine() ?? "1") - 1;
-
-        Console.Write("Введіть текст питання: ");
-        string text = Console.ReadLine() ?? "";
-
-        var q = new OpenEndedQuestion { Text = text, Points = 10 };
-        topics.AddQuestionToTopic(all[idx].Name, q);
-        Console.WriteLine("Питання додано.");
+        service.DeleteTopic(topicName);
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine($"Успішно: Тему '{topicName}' було видалено.");
+        Console.ResetColor();
     }
-    Console.ReadKey();
-}
-
-void ShowStatistics(StatisticsService stats)
-{
-    Console.Clear();
-    Console.WriteLine("=== Статистика успішності ===");
-    var scores = stats.GetAverageScoresByTopic();
-    
-    if (!scores.Any()) Console.WriteLine("Історія порожня.");
-    
-    foreach (var entry in scores)
+    else
     {
-        Console.WriteLine($"Тема: {entry.Key} | Сер. бал: {entry.Value:F2}");
+        Console.WriteLine("Видалення скасовано.");
     }
-    
-    Console.WriteLine("\nНатисніть будь-яку клавішу...");
-    Console.ReadKey();
 }

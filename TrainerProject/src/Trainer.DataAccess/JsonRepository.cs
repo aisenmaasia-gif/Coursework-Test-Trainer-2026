@@ -22,7 +22,8 @@ public class JsonRepository<T> : IRepository<T> where T : class
         {
             WriteIndented = true,
             ReferenceHandler = ReferenceHandler.IgnoreCycles,
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
+            NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals 
         };
     }
 
