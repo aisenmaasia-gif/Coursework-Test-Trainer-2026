@@ -26,4 +26,20 @@ public class OpenEndedQuestionTests
         var q = new OpenEndedQuestion { CorrectAnswer = "Так" };
         Assert.That(q.CheckAnswer("Ні"), Is.False);
     }
+
+    [Test]
+    public void CheckAnswer_WithMessyInput_ReturnsTrue()
+    {
+
+        var q = new OpenEndedQuestion { CorrectAnswer = "Київ" };
+
+        Assert.That(q.CheckAnswer("  кИїВ  "), Is.True);
+    }
+
+    [Test]
+    public void CheckAnswer_EmptyStringInput_ReturnsFalse()
+    {
+        var q = new OpenEndedQuestion { CorrectAnswer = "Київ" };
+        Assert.That(q.CheckAnswer(""), Is.False);
+    }
 }
