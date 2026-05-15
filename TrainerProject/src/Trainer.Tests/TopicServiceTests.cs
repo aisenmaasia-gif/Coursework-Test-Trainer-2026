@@ -1,5 +1,4 @@
-using Trainer.Domain; 
-using Trainer.BusinessLogic;
+
 [TestFixture]
 public class TopicServiceTests
 {

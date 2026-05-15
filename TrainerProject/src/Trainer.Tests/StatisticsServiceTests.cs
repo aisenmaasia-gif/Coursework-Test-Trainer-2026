@@ -1,7 +1,3 @@
-using NUnit.Framework;
-using Trainer.BusinessLogic;
-using Trainer.Domain;
-using System.Collections.Generic;
 
 [TestFixture]
 public class StatisticsServiceTests

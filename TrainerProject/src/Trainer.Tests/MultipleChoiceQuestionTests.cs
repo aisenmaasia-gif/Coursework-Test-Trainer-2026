@@ -1,5 +1,3 @@
-using NUnit.Framework;
-using Trainer.Domain;
 
 namespace Trainer.Tests;
 

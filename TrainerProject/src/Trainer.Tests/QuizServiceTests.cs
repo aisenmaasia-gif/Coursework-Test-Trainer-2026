@@ -1,7 +1,3 @@
-using NUnit.Framework;
-using Trainer.BusinessLogic;
-using Trainer.Domain;
-using System.Linq;
 
 namespace Trainer.Tests;
 

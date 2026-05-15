@@ -12,98 +12,84 @@ public class TopicService
         _context = context;
     }
 
+    public List<Topic> GetTopics() => _context.Topics.GetAll().ToList();
+
     public void AddTopic(string name)
     {
-        var topics = _context.Topics.GetAll().ToList();
-        if (topics.Any(t => t.Name == name)) throw new Exception("Тема вже існує");
+        if (string.IsNullOrWhiteSpace(name))
+            throw new Exception("Назва теми не може бути порожньою.");
+
+        var topics = GetTopics();
+        if (topics.Any(t => t.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            throw new Exception($"Тема з назвою '{name}' вже існує.");
 
         topics.Add(new Topic { Name = name });
         _context.Topics.SaveAll(topics);
     }
 
-    public void AddQuestionToTopic(string topicName, Question question)
-    {
-        var topics = _context.Topics.GetAll().ToList();
-        var topic = topics.FirstOrDefault(t => t.Name == topicName);
-
-        if (topic == null) throw new Exception("Тему не знайдено");
-
-        topic.Questions.Add(question);
-        _context.Topics.SaveAll(topics);
-    }
-
-    public List<Topic> GetTopics() => _context.Topics.GetAll().ToList();
-
     public void DeleteTopic(string name)
     {
-        var topics = _context.Topics.GetAll().ToList();
+        var topics = GetTopics();
+        var topic = topics.FirstOrDefault(t => t.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
-        var topicToRemove = topics.FirstOrDefault(t => t.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        if (topic == null)
+            throw new Exception($"Тему '{name}' не знайдено.");
 
-        if (topicToRemove == null)
-        {
-            throw new Exception($"Тему з назвою '{name}' не знайдено.");
-        }
-
-        topics.Remove(topicToRemove);
-
+        topics.Remove(topic);
         _context.Topics.SaveAll(topics);
     }
 
     public void UpdateTopicName(string oldName, string newName)
     {
-        var topics = _context.Topics.GetAll().ToList();
-        var topic = topics.FirstOrDefault(t => t.Name == oldName);
+        if (string.IsNullOrWhiteSpace(newName))
+            throw new Exception("Нова назва не може бути порожньою.");
 
-        if (topic != null)
-        {
-            topic.Name = newName;
-            _context.Topics.SaveAll(topics);
-        }
+        var topics = GetTopics();
+        var topic = topics.FirstOrDefault(t => t.Name.Equals(oldName, StringComparison.OrdinalIgnoreCase));
+
+        if (topic == null)
+            throw new Exception($"Тему '{oldName}' не знайдено.");
+
+        if (topics.Any(t => t.Name.Equals(newName, StringComparison.OrdinalIgnoreCase)))
+            throw new Exception($"Тема з назвою '{newName}' вже існує.");
+
+        topic.Name = newName;
+        _context.Topics.SaveAll(topics);
     }
 
-    public void DeleteQuestion(string topicName, int questionIndex)
+    public void AddQuestionToTopic(string topicName, Question question)
     {
-        var topics = _context.Topics.GetAll().ToList();
-        var topic = topics.FirstOrDefault(t => t.Name == topicName);
+        var topics = GetTopics();
+        var topic = topics.FirstOrDefault(t => t.Name.Equals(topicName, StringComparison.OrdinalIgnoreCase));
 
-        if (topic != null && questionIndex >= 0 && questionIndex < topic.Questions.Count)
-        {
-            topic.Questions.RemoveAt(questionIndex);
-            _context.Topics.SaveAll(topics);
-        }
+        if (topic == null) throw new Exception("Тему не знайдено.");
+        if (string.IsNullOrWhiteSpace(question.Text)) throw new Exception("Текст питання не може бути порожнім.");
+
+        topic.Questions.Add(question);
+        _context.Topics.SaveAll(topics);
+    }
+
+    public void DeleteQuestion(string topicName, int index)
+    {
+        var topics = GetTopics();
+        var topic = topics.FirstOrDefault(t => t.Name.Equals(topicName, StringComparison.OrdinalIgnoreCase));
+
+        if (topic == null) throw new Exception("Тему не знайдено.");
+        if (index < 0 || index >= topic.Questions.Count) throw new Exception("Невірний номер запитання.");
+
+        topic.Questions.RemoveAt(index);
+        _context.Topics.SaveAll(topics);
     }
 
     public void UpdateQuestion(string topicName, int index, Question updated)
     {
-        var topics = _context.Topics.GetAll().ToList();
-        var topic = topics.FirstOrDefault(t => t.Name == topicName);
+        var topics = GetTopics();
+        var topic = topics.FirstOrDefault(t => t.Name.Equals(topicName, StringComparison.OrdinalIgnoreCase));
 
-        if (topic != null && index >= 0 && index < topic.Questions.Count)
-        {
-            topic.Questions[index] = updated;
-            _context.Topics.SaveAll(topics);
-        }
-    }
-    public void NewTopicName(string oldName, string newName)
-    {
-        var topics = _context.Topics.GetAll().ToList();
+        if (topic == null) throw new Exception("Тему не знайдено.");
+        if (index < 0 || index >= topic.Questions.Count) throw new Exception("Невірний номер запитання.");
 
-        var topicToEdit = topics.FirstOrDefault(t => t.Name.Equals(oldName, StringComparison.OrdinalIgnoreCase));
-
-        if (topicToEdit == null)
-        {
-            throw new Exception($"Тему '{oldName}' не знайдено.");
-        }
-
-        bool nameExists = topics.Any(t => t.Name.Equals(newName, StringComparison.OrdinalIgnoreCase));
-        if (nameExists)
-        {
-            throw new Exception($"Тема з назвою '{newName}' вже існує.");
-        }
-
-        topicToEdit.Name = newName;
-
+        topic.Questions[index] = updated;
         _context.Topics.SaveAll(topics);
     }
 }

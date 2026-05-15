@@ -15,9 +15,57 @@ public static class UIHelpers
         return Console.ReadLine()?.Trim() ?? "";
     }
 
+    public static int GetSafeInt(string message, int min, int max)
+    {
+        while (true)
+        {
+            Console.Write($"{message} ({min}-{max}): ");
+            if (int.TryParse(Console.ReadLine(), out int result) && result >= min && result <= max)
+                return result;
+
+            PrintColored($"Помилка! Введіть число від {min} до {max}.", ConsoleColor.Red);
+        }
+    }
+
+    public static double GetSafeDouble(string message)
+    {
+        while (true)
+        {
+            Console.Write($"{message}: ");
+            if (double.TryParse(Console.ReadLine(), out double result) && result >= 0)
+                return result;
+
+            PrintColored("Помилка! Введіть додатне число (напр. 5.5).", ConsoleColor.Red);
+        }
+    }
+
     public static void Wait()
     {
-        Console.WriteLine("\nНатисніть будь-яку клавішу для продовження...");
+        Console.WriteLine("\nНатисніть будь-яку клавішу...");
         Console.ReadKey();
+    }
+    public static List<int> GetSafeIntList(string message, int max)
+    {
+        while (true)
+        {
+            string input = Prompt(message);
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                PrintColored("Помилка! Ввід не може бути порожнім.", ConsoleColor.Red);
+                continue;
+            }
+
+            var indices = input.Split(',')
+                .Select(s => int.TryParse(s.Trim(), out int id) ? id : -1)
+                .Where(id => id >= 1 && id <= max)
+                .ToList();
+
+            if (indices.Any())
+            {
+                return indices.Select(id => id - 1).ToList();
+            }
+
+            PrintColored($"Помилка! Введіть коректні номери питань від 1 до {max} через кому.", ConsoleColor.Red);
+        }
     }
 }
