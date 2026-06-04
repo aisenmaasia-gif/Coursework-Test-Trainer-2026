@@ -31,7 +31,12 @@ public class QuizHandler
             if (topic.Questions.Count == 0) throw new Exception("У темі немає запитань.");
 
             UIHelpers.PrintColored($"\n--- Тема: {topic.Name} ---", ConsoleColor.Cyan);
-            Console.WriteLine("1. Випадковий вибір\n2. Ручний вибір");
+
+            // Динамічний запит імені користувача
+            string studentName = UIHelpers.Prompt("Введіть ваше ім'я (або залиште порожнім для 'Гість')");
+            if (string.IsNullOrWhiteSpace(studentName)) studentName = "Гість";
+
+            Console.WriteLine("\n1. Випадковий вибір\n2. Ручний вибір");
 
             int mode = UIHelpers.GetSafeInt("Оберіть режим", 1, 2);
             List<Question> session;
@@ -48,12 +53,61 @@ public class QuizHandler
 
             if (session != null && session.Any())
             {
-                ExecuteQuiz(session, topic.Name);
+                ExecuteQuiz(session, topic.Name, studentName);
             }
         }
         catch (Exception ex)
         {
             UIHelpers.PrintColored($"\nПомилка тесту: {ex.Message}", ConsoleColor.Red);
+            UIHelpers.Wait();
+        }
+    }
+
+    private void ExecuteQuiz(List<Question> questions, string topicName, string studentName)
+    {
+        var sessionResults = new List<(Question Q, object UserAns)>();
+
+        try
+        {
+            foreach (var q in questions)
+            {
+                Console.Clear();
+                UIHelpers.PrintColored($"--- {q.Text} ---", ConsoleColor.Yellow);
+
+                if (q is SingleChoiceQuestion scq)
+                {
+                    for (int i = 0; i < scq.Options.Count; i++) Console.WriteLine($"{i + 1}. {scq.Options[i]}");
+                    int choice = UIHelpers.GetSafeInt("Ваш вибір", 1, scq.Options.Count);
+                    sessionResults.Add((q, scq.Options[choice - 1]));
+                }
+                else if (q is MultipleChoiceQuestion mcq)
+                {
+                    for (int i = 0; i < mcq.Options.Count; i++) Console.WriteLine($"{i + 1}. {mcq.Options[i]}");
+                    var indices = UIHelpers.GetSafeIntList("Ваші відповіді через кому", mcq.Options.Count);
+                    var selectedStrings = indices.Select(id => mcq.Options[id]).ToList();
+                    sessionResults.Add((q, selectedStrings));
+                }
+                else if (q is OpenEndedQuestion)
+                {
+                    sessionResults.Add((q, UIHelpers.Prompt("Ваша відповідь")));
+                }
+            }
+
+            double score = _quiz.CalculateResult(sessionResults);
+            _quiz.SaveResult(studentName, topicName, score);
+
+            Console.Clear();
+            UIHelpers.PrintColored("=== РЕЗУЛЬТАТ ===", ConsoleColor.Cyan);
+            UIHelpers.PrintColored($"Ви набрали: {score} балів.", ConsoleColor.Green);
+
+            ShowErrorReview(sessionResults);
+        }
+        catch (Exception ex)
+        {
+            UIHelpers.PrintColored($"Помилка під час виконання: {ex.Message}", ConsoleColor.Red);
+        }
+        finally
+        {
             UIHelpers.Wait();
         }
     }

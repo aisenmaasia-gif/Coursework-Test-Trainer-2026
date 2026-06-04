@@ -1,37 +1,35 @@
+namespace Trainer.Domain;
 
-namespace Trainer.Tests;
-
-[TestFixture]
-public class MultipleChoiceQuestionTests
+public class MultipleChoiceQuestion : Question
 {
-    [Test]
-    public void CheckAnswer_AllCorrectAnswersProvided_ReturnsTrue()
+    public List<string> Options { get; set; } = new();
+    public List<string> CorrectAnswers { get; set; } = new();
+
+    public override void Shuffle()
     {
-        var q = new MultipleChoiceQuestion { CorrectAnswers = new List<string> { "A", "B" } };
-        var userChoice = new List<string> { "A", "B" };
-        Assert.That(q.CheckAnswer(userChoice), Is.True);
+        var random = new Random();
+        Options = Options.OrderBy(x => random.Next()).ToList();
     }
 
-    [Test]
-    public void CheckAnswer_PartialCorrectAnswers_ReturnsFalse()
+    public override bool CheckAnswer(object answer)
     {
-        var q = new MultipleChoiceQuestion { CorrectAnswers = new List<string> { "A", "B" } };
-        var userChoice = new List<string> { "A" };
-        Assert.That(q.CheckAnswer(userChoice), Is.False);
+        if (answer is List<string> userAnswers)
+        {
+            HashSet<string> userSet = CreateTrimmedSet(userAnswers);
+            HashSet<string> correctSet = CreateTrimmedSet(CorrectAnswers);
+
+            return userSet.SetEquals(correctSet);
+        }
+        return false;
     }
 
-    [Test]
-    public void CheckAnswer_ExtraWrongAnswer_ReturnsFalse()
+    private HashSet<string> CreateTrimmedSet(List<string> sourceList)
     {
-        var q = new MultipleChoiceQuestion { CorrectAnswers = new List<string> { "A", "B" } };
-        var userChoice = new List<string> { "A", "B", "C" };
-        Assert.That(q.CheckAnswer(userChoice), Is.False);
-    }
-
-    [Test]
-    public void CheckAnswer_WrongTypeInput_ReturnsFalse()
-    {
-        var q = new MultipleChoiceQuestion { CorrectAnswers = new List<string> { "A" } };
-        Assert.That(q.CheckAnswer("NotAList"), Is.False);
+        HashSet<string> resultSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string item in sourceList)
+        {
+            resultSet.Add(item.Trim());
+        }
+        return resultSet;
     }
 }

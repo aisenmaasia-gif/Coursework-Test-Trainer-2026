@@ -4,19 +4,14 @@ public class OpenEndedQuestion : Question
 {
     public List<string> AcceptableAnswers { get; set; } = new();
 
-    public string CorrectAnswer 
-    { 
+    public string CorrectAnswer
+    {
         get => AcceptableAnswers.FirstOrDefault() ?? string.Empty;
-        set 
+        set
         {
             AcceptableAnswers.Clear();
             if (!string.IsNullOrEmpty(value)) AcceptableAnswers.Add(value);
         }
-    }
-
-    public override void Shuffle()
-    {
-
     }
 
     public override bool CheckAnswer(object answer)
@@ -25,7 +20,7 @@ public class OpenEndedQuestion : Question
         {
             string cleanUserAnswer = userAnswer.Trim();
 
-            return AcceptableAnswers.Any(a => 
+            return AcceptableAnswers.Any(a =>
                 string.Equals(a.Trim(), cleanUserAnswer, StringComparison.OrdinalIgnoreCase));
         }
         return false;

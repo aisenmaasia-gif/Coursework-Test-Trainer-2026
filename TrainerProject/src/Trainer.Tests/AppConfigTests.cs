@@ -1,4 +1,5 @@
-
+using Trainer.Domain;
+using Trainer.BusinessLogic;
 namespace Trainer.Tests;
 
 [TestFixture]

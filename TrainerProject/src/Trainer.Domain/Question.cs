@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization; 
+using System.Text.Json.Serialization;
 
 namespace Trainer.Domain;
 
@@ -9,6 +9,6 @@ public abstract class Question
 {
     public string Text { get; set; } = string.Empty;
     public double Points { get; set; }
-    public abstract void Shuffle(); 
+    public virtual void Shuffle() { }
     public abstract bool CheckAnswer(object answer);
 }

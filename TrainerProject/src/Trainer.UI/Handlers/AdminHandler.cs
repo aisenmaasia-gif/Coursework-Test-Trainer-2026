@@ -44,18 +44,18 @@ public class AdminHandler
         {
             var opts = UIHelpers.Prompt("Варіанти через кому").Split(',').Select(s => s.Trim()).ToList();
             string correct = UIHelpers.Prompt("Правильна відповідь");
-            _service.AddQuestionToTopic(tName, new SingleChoiceQuestion { Text = text, Options = opts, CorrectAnswer = correct, Points = 10 });
+            _service.AddQuestionToTopic(tName, new SingleChoiceQuestion { Text = text, Options = opts, CorrectAnswer = correct });
         }
         else if (type == "2")
         {
             var opts = UIHelpers.Prompt("Варіанти через кому").Split(',').Select(s => s.Trim()).ToList();
             var corrects = UIHelpers.Prompt("УСІ правильні через кому").Split(',').Select(s => s.Trim()).ToList();
-            _service.AddQuestionToTopic(tName, new MultipleChoiceQuestion { Text = text, Options = opts, CorrectAnswers = corrects, Points = 10 });
+            _service.AddQuestionToTopic(tName, new MultipleChoiceQuestion { Text = text, Options = opts, CorrectAnswers = corrects });
         }
         else
         {
             string correct = UIHelpers.Prompt("Правильна відповідь");
-            _service.AddQuestionToTopic(tName, new OpenEndedQuestion { Text = text, CorrectAnswer = correct, Points = 10 });
+            _service.AddQuestionToTopic(tName, new OpenEndedQuestion { Text = text, CorrectAnswer = correct });
         }
         UIHelpers.PrintColored("Питання додано!", ConsoleColor.Green);
     }

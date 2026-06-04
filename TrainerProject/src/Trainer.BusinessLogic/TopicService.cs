@@ -65,6 +65,12 @@ public class TopicService
         if (topic == null) throw new Exception("Тему не знайдено.");
         if (string.IsNullOrWhiteSpace(question.Text)) throw new Exception("Текст питання не може бути порожнім.");
 
+        if (question.Points <= 0)
+        {
+            var config = _context.Settings.GetAll().FirstOrDefault() ?? new AppConfig();
+            question.Points = config.PointsPerQuestion;
+        }
+
         topic.Questions.Add(question);
         _context.Topics.SaveAll(topics);
     }
