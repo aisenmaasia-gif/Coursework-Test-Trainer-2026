@@ -3,15 +3,10 @@ using Trainer.DataAccess;
 
 namespace Trainer.BusinessLogic;
 
-public delegate void QuizCompletedHandler(TestResult result);
-
 public class QuizService
 {
     private readonly DataContext _context;
     private readonly Random _random = new();
-
-    public event QuizCompletedHandler? OnQuizCompleted;
-
     public QuizService(DataContext context)
     {
         _context = context;
@@ -63,7 +58,6 @@ public class QuizService
         var results = _context.History.GetAll().ToList();
         results.Add(newResult);
         _context.History.SaveAll(results);
-        OnQuizCompleted?.Invoke(newResult);
     }
     public List<Question> GenerateManualSession(string topicName, List<int> selectedIndices)
     {
