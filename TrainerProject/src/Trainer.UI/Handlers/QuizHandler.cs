@@ -31,8 +31,6 @@ public class QuizHandler
             if (topic.Questions.Count == 0) throw new Exception("У темі немає запитань.");
 
             UIHelpers.PrintColored($"\n--- Тема: {topic.Name} ---", ConsoleColor.Cyan);
-
-            // Динамічний запит імені користувача
             string studentName = UIHelpers.Prompt("Введіть ваше ім'я (або залиште порожнім для 'Гість')");
             if (string.IsNullOrWhiteSpace(studentName)) studentName = "Гість";
 
