@@ -20,9 +20,15 @@ public class OpenEndedQuestion : Question
         {
             string cleanUserAnswer = userAnswer.Trim();
 
-            return AcceptableAnswers.Any(a =>
-                string.Equals(a.Trim(), cleanUserAnswer, StringComparison.OrdinalIgnoreCase));
+            foreach (string acceptableAnswer in AcceptableAnswers)
+            {
+                if (string.Equals(acceptableAnswer.Trim(), cleanUserAnswer, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
         }
+
         return false;
     }
 }

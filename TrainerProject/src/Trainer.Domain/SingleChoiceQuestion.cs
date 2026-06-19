@@ -8,7 +8,15 @@ public class SingleChoiceQuestion : Question
     public override void Shuffle()
     {
         var random = new Random();
-        Options = Options.OrderBy(x => random.Next()).ToList();
+        int n = Options.Count;
+        while (n > 1)
+        {
+            n--;
+            int k = random.Next(n + 1);
+            string value = Options[k];
+            Options[k] = Options[n];
+            Options[n] = value;
+        }
     }
 
     public override bool CheckAnswer(object answer)

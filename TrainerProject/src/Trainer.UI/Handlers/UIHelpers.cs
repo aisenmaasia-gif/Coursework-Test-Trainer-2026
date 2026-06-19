@@ -55,14 +55,21 @@ public static class UIHelpers
                 continue;
             }
 
-            var indices = input.Split(',')
-                .Select(s => int.TryParse(s.Trim(), out int id) ? id : -1)
-                .Where(id => id >= 1 && id <= max)
-                .ToList();
+            string[] parts = input.Split(',');
 
-            if (indices.Any())
+            List<int> indices = new List<int>();
+
+            foreach (string part in parts)
             {
-                return indices.Select(id => id - 1).ToList();
+
+                if (int.TryParse(part.Trim(), out int id))
+                {
+
+                    if (id >= 1 && id <= max)
+                    {
+                        indices.Add(id);
+                    }
+                }
             }
 
             PrintColored($"Помилка! Введіть коректні номери питань від 1 до {max} через кому.", ConsoleColor.Red);

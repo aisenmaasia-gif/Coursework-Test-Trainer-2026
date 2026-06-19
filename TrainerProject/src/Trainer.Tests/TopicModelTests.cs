@@ -1,4 +1,4 @@
-
+using Trainer.Domain;
 namespace Trainer.Tests;
 
 [TestFixture]

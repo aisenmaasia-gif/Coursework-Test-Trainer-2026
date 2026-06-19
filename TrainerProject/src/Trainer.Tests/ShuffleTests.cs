@@ -1,4 +1,4 @@
-
+using Trainer.Domain;
 [TestFixture]
 public class ShuffleTests
 {

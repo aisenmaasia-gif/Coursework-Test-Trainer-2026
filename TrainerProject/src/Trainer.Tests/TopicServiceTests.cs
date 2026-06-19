@@ -1,4 +1,4 @@
-
+using Trainer.Domain;
 [TestFixture]
 public class TopicServiceTests
 {
@@ -8,11 +8,24 @@ public class TopicServiceTests
         var existingTopics = new List<Topic> { new Topic { Name = "Existing" } };
         string newName = "Existing";
 
-        Assert.Throws<System.Exception>(() =>
+        bool exceptionThrown = false;
+
+        try
         {
-            if (existingTopics.Any(t => t.Name == newName))
-                throw new System.Exception("Тема вже існує");
-        });
+            foreach (var t in existingTopics)
+            {
+                if (t.Name == newName)
+                {
+                    throw new Exception("Тема вже існує");
+                }
+            }
+        }
+        catch (Exception ex) when (ex.Message == "Тема вже існує")
+        {
+            exceptionThrown = true;
+        }
+
+        Assert.That(exceptionThrown, Is.True);
     }
 
     [Test]
